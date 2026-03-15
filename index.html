@@ -309,14 +309,21 @@
 
         // Llena los datos y muestra la pantalla oscura con la foto
         function abrirVisor(recuerdo, index) {
-            tarjetaModal.classList.remove('volteada'); // Asegura que siempre inicie mostrando la foto
+            tarjetaModal.classList.remove('volteada'); 
             
             document.getElementById('modal-img').src = recuerdo.imagen;
             document.getElementById('modal-texto').innerText = recuerdo.texto;
             
             const btnDescarga = document.getElementById('modal-descarga');
-            btnDescarga.href = recuerdo.imagen;
-            btnDescarga.download = `Recuerdo_Marisol_${index + 1}.jpg`;
+            // Quitamos el href antiguo
+            btnDescarga.href = "#"; 
+            
+            // Usamos onclick para evitar que se acumulen clics anteriores
+            btnDescarga.onclick = (evento) => {
+                evento.preventDefault();
+                evento.stopPropagation(); 
+                forzarDescarga(recuerdo.imagen, `Recuerdo_Marisol_${index + 1}.jpg`);
+            };
 
             modalVisor.style.display = 'flex';
         }
@@ -335,6 +342,33 @@
             evento.stopPropagation(); 
             modalVisor.style.display = 'none';
         });
+        
+        // Función para forzar la descarga sin salir de la página
+        async function forzarDescarga(url, nombreArchivo) {
+            try {
+                // 1. Descargamos la imagen de ImgBB en segundo plano
+                const respuesta = await fetch(url);
+                const blob = await respuesta.blob();
+                
+                // 2. Creamos un enlace local temporal dentro de tu página
+                const urlLocal = window.URL.createObjectURL(blob);
+                const enlaceTemporal = document.createElement('a');
+                enlaceTemporal.href = urlLocal;
+                enlaceTemporal.download = nombreArchivo;
+                
+                // 3. Simulamos un clic invisible para iniciar la descarga
+                document.body.appendChild(enlaceTemporal);
+                enlaceTemporal.click();
+                
+                // 4. Limpiamos la basura
+                document.body.removeChild(enlaceTemporal);
+                window.URL.revokeObjectURL(urlLocal);
+            } catch (error) {
+                console.error("El navegador bloqueó la descarga:", error);
+                // Plan B: si el celular lo bloquea, lo abre en una pestaña nueva limpia
+                window.open(url, '_blank');
+            }
+        }
     </script>
 </body>
 </html>
